@@ -41,9 +41,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: sonar-scanner
              -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-             -Dsonar.organization=zerosinitiative
+             -Dsonar.organization=sriram9707
              -Dsonar.host.url=https://sonarcloud.io/
-             -Dsonar.projectKey=zidevops
+             -Dsonar.projectKey=maven-project
           
       - name: Login to Artifactory
         run: docker login -u sriram9707 -p ${{ secrets.DOCKER_TOKEN}}
