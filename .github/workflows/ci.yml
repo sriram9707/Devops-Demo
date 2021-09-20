@@ -1,1 +1,70 @@
 
+# This is a basic workflow to help you get started with Actions
+name: github-actions-selfhosted
+
+# Controls when the action will run. 
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    branches:    
+      # Push events on main branch
+      - master
+      
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - uses: fregante/setup-git-user@v1
+      - uses: snyk/actions/setup@master
+      - name: Snyk Test
+        run: snyk test --sarif-file-output=snyk-sarif.json
+        continue-on-error: true       
+        env:
+          SNYK_TOKEN: ${{ secrets.SYNK_API_TOKEN }}
+          
+      # Runs a single command using the runners shell
+      - name: Run testcases
+        run: mvn test
+      
+      - name: Package an artifact
+        run: mvn package
+        
+      - name: Setup sonarqube
+        uses: warchant/setup-sonar-scanner@v3
+      - name: Run sonarqube
+        env:
+          # to get access to secrets.SONAR_TOKEN, provide GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: sonar-scanner
+             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+             -Dsonar.organization=zerosinitiative
+             -Dsonar.host.url=https://sonarcloud.io/
+             -Dsonar.projectKey=zidevops
+          
+      - name: Login to Artifactory
+        run: docker login bbtest.jfrog.io --username bb-test --password ${{ secrets.JFROG_ARTIFACTORY_PASSWORD }}
+        
+      - name: Create a docker image
+        run: docker build -t bbtest.jfrog.io/default-docker-local/spring-boot-example:1.0.${GITHUB_RUN_NUMBER} .
+        
+      - name: Trivy Image Scanning
+        run: trivy image -f table bbtest.jfrog.io/default-docker-local/spring-boot-example:1.0.${GITHUB_RUN_NUMBER}
+        
+      - name: Push the docker image
+        run: docker push bbtest.jfrog.io/default-docker-local/spring-boot-example:1.0.${GITHUB_RUN_NUMBER}
+      
+      - name: Tag Git Repository
+        run: git tag -a docker-release/v1.0.${GITHUB_RUN_NUMBER} -m "New Version"
+        
+      - name: Push Git tag
+        run: git push origin docker-release/v1.0.${GITHUB_RUN_NUMBER}
+
+
+
