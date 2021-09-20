@@ -43,7 +43,7 @@ jobs:
              -Dsonar.login=${{ secrets.SONAR_TOKEN }}
              -Dsonar.organization=sriram9707
              -Dsonar.host.url=https://sonarcloud.io/
-             -Dsonar.projectKey=Devops-Demo
+             -Dsonar.projectKey=sriram9707_Devops-Demo
           
       - name: Login to Artifactory
         run: docker login -u sriram9707 -p ${{ secrets.DOCKER_TOKEN}}
