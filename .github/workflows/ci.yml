@@ -22,13 +22,10 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       - uses: fregante/setup-git-user@v1
-      - uses: snyk/actions/setup@master
-      - name: Snyk Test
-        run: snyk test --sarif-file-output=snyk-sarif.json
-        continue-on-error: true       
-        env:
-          SNYK_TOKEN: ${{ secrets.SYNK_API_TOKEN }}
-          
+      - name: Setup java environment for the build
+        uses: actions/setup-java@v1
+        with:
+          java-version: 14
       # Runs a single command using the runners shell
       - name: Run testcases
         run: mvn test
@@ -49,16 +46,14 @@ jobs:
              -Dsonar.projectKey=zidevops
           
       - name: Login to Artifactory
-        run: docker login bbtest.jfrog.io --username bb-test --password ${{ secrets.JFROG_ARTIFACTORY_PASSWORD }}
+        run: docker login -u sriram9707 -p ${{ secrets.DOCKER_TOKEN}}
         
       - name: Create a docker image
-        run: docker build -t bbtest.jfrog.io/default-docker-local/spring-boot-example:1.0.${GITHUB_RUN_NUMBER} .
+        run: docker build -t sriram9707/spring-boot-example:1.0.${GITHUB_RUN_NUMBER} .
         
-      - name: Trivy Image Scanning
-        run: trivy image -f table bbtest.jfrog.io/default-docker-local/spring-boot-example:1.0.${GITHUB_RUN_NUMBER}
         
       - name: Push the docker image
-        run: docker push bbtest.jfrog.io/default-docker-local/spring-boot-example:1.0.${GITHUB_RUN_NUMBER}
+        run: docker push sriram9707/spring-boot-example:1.0.${GITHUB_RUN_NUMBER}
       
       - name: Tag Git Repository
         run: git tag -a docker-release/v1.0.${GITHUB_RUN_NUMBER} -m "New Version"
